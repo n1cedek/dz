@@ -6,7 +6,7 @@ import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/wrappers.proto";
 
-option go_package = "github.com/n1cedek/dz/auth/pkg/w1;w1";
+option go_package = "github.com/n1cedek/dz/auth_test/pkg/w1;w1";
 
 service UserAPI{
   rpc Create(CreateRequest) returns (CreateResponse);

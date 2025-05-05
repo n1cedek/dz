@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	desc "dz/auth/pkg/w1"
+	desc "dz/auth_test/pkg/w1"
 	"github.com/brianvoe/gofakeit"
 	"github.com/fatih/color"
 	"google.golang.org/grpc"
