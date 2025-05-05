@@ -6,11 +6,6 @@ import (
 	"os"
 )
 
-const pgDsnEnv = "PG_DSN
-
-
-var _ config.DBConfig =
-const pgDsnEnv = "PG_DSN"
 var _ config.DBConfig = (*dbConfig)(nil)
 var _ config.CcConfig = (*ccConfig)(nil)
 
@@ -27,7 +22,7 @@ type AppConfig struct {
 }
 
 func NewAppConfig() (*AppConfig, error) {
-	port := os.Getenv(pgDsnEnv)
+	port := os.Getenv("PG_DSN")
 	if len(port) == 0 {
 		return nil, errors.New("cc port not found")
 	}
