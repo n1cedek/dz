@@ -17,3 +17,7 @@ type PGConfig interface {
 type GPRCConfig interface {
 	Address() string
 }
+
+type HTTPConfig interface {
+	Address() string
+}

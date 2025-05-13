@@ -3,10 +3,10 @@ package tests
 import (
 	"context"
 	auth2 "dz/auth/internal/api/auth"
+	"dz/auth/internal/repo/auth/model"
+	"dz/auth/internal/service"
+	serviceMock "dz/auth/internal/service/mocks"
 	desc "dz/auth/pkg/w1"
-	"dz/auth/repo/auth/model"
-	"dz/auth/service"
-	serviceMock "dz/auth/service/mocks"
 	"fmt"
 	"github.com/brianvoe/gofakeit"
 	"github.com/gojuno/minimock/v3"
@@ -43,7 +43,7 @@ func TestCreate(t *testing.T) {
 			Password: pas,
 		}
 
-
+		// Объект пользователя, ожидаемый в вызове метода Create сервиса
 		info = &model.User{
 			ID:       0, // На входе всегда 0! Всегда 0 для нового пользователя
 			Name:     name,

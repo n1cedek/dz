@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"dz/auth/app"
+	"dz/auth/internal/app"
 	"flag"
 	"log"
 )

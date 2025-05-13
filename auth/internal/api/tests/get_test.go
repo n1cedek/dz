@@ -2,12 +2,12 @@ package tests
 
 import (
 	"context"
-	"dz/auth/converter"
 	auth2 "dz/auth/internal/api/auth"
-	"dz/auth/model"
+	"dz/auth/internal/converter"
+	"dz/auth/internal/model"
+	"dz/auth/internal/service"
+	serviceMock "dz/auth/internal/service/mocks"
 	desc "dz/auth/pkg/w1"
-	"dz/auth/service"
-	serviceMock "dz/auth/service/mocks"
 	"fmt"
 	"github.com/brianvoe/gofakeit"
 	"github.com/gojuno/minimock/v3"

@@ -1,9 +1,8 @@
 package auth2
 
 import (
-	"dz/auth/service"
-
-	desc"dz/auth/pkg/w1"
+	"dz/auth/internal/service"
+	desc "dz/auth/pkg/w1"
 )
 
 type Implementation struct {

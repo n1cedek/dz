@@ -2,7 +2,7 @@ package auth2
 
 import (
 	"context"
-	converter1 "dz/auth/converter"
+	converter1 "dz/auth/internal/converter"
 	desc "dz/auth/pkg/w1"
 	"log"
 )
