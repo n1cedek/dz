@@ -25,6 +25,8 @@ get-deps:
 generate:
 	make vendor-proto
 	make generate-note-api
+	make generate-auth-api
+	make generate-access-api
 
 generate-note-api:
 	mkdir -p $(OUT_DIR)
@@ -41,6 +43,24 @@ generate-note-api:
 	--grpc-gateway_out=$(OUT_DIR) --grpc-gateway_opt=paths=source_relative \
     --plugin=protoc-gen-grpc-gateway=bin/protoc-gen-grpc-gateway \
 	$(PROTO_FILE)
+
+generate-auth-api:
+	mkdir -p pkg/auth_v1
+	protoc --proto_path api/auth_v1 \
+	--go_out=pkg/auth_v1 --go_opt=paths=source_relative \
+	--plugin=protoc-gen-go=bin/protoc-gen-go \
+	--go-grpc_out=pkg/auth_v1 --go-grpc_opt=paths=source_relative \
+	--plugin=protoc-gen-go-grpc=bin/protoc-gen-go-grpc \
+	api/auth_v1/authv1.proto
+
+generate-access-api:
+	mkdir -p pkg/access_v1
+	protoc --proto_path api/access_v1 \
+	--go_out=pkg/access_v1 --go_opt=paths=source_relative \
+	--plugin=protoc-gen-go=bin/protoc-gen-go \
+	--go-grpc_out=pkg/access_v1 --go-grpc_opt=paths=source_relative \
+	--plugin=protoc-gen-go-grpc=bin/protoc-gen-go-grpc \
+	api/access_v1/access.proto
 
 local-migration-status:
 	goose -dir ${LOCAL_MIGRATION_DIR} postgres ${LOCAL_MIGRATION_DSN} status -v
@@ -88,3 +108,18 @@ vendor-proto:
         			mv vendor.protogen/googleapis/google/api vendor.protogen/google &&\
         			rm -rf vendor.protogen/googleapis ;\
         		fi
+
+gen-cert:
+	mkdir -p certificates
+	# Генерация закрытого ключа для центра сертификации (CA)
+	openssl genrsa -out certificates/ca.key 4096
+	# Создание самоподписанного сертификата CA на основе ключа (срок действия 365 дней)
+	openssl req -new -x509 -key certificates/ca.key -sha256 -subj "/C=US/ST=NJ/O=CA, Inc." -days 365 -out certificates/ca.cert
+	# Генерация закрытого ключа для gRPC-сервиса
+	openssl genrsa -out certificates/service.key 4096
+	# Создание запроса на сертификат (CSR) для сервиса с использованием конфигурационного файла
+	openssl req -new -key certificates/service.key -out certificates/service.csr -config certificate.conf
+	# Подписание CSR с помощью CA, чтобы выпустить действительный сертификат для сервиса
+	# Используется конфигурационный файл для указания расширений сертификата
+	openssl x509 -req -in certificates/service.csr -CA certificates/ca.cert -CAkey certificates/ca.key -CAcreateserial \
+    		-out certificates/service.pem -days 365 -sha256 -extfile certificate.conf -extensions req_ext

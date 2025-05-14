@@ -9,7 +9,7 @@ import (
 	"flag"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection"
 	"log"
 	"net"
@@ -99,8 +99,14 @@ func (a *App) initServiceProvider(_ context.Context) error {
 }
 
 func (a *App) initGRPCServer(ctx context.Context) error {
+	cred, err := a.serviceProvider.TLSConfig().GetTLSConfig()
+	if err != nil {
+		log.Fatalf("failed to get TLS credentials: %v", err)
+		return err
+	}
+
 	a.grpcServer = grpc.NewServer(
-		grpc.Creds(insecure.NewCredentials()),
+		grpc.Creds(cred),
 		grpc.UnaryInterceptor(interceptor.ValidateInterceptor),
 	)
 
@@ -112,11 +118,16 @@ func (a *App) initGRPCServer(ctx context.Context) error {
 func (a *App) initHTTPServer(ctx context.Context) error {
 	mux := runtime.NewServeMux()
 
-	opts := []grpc.DialOption{
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	creds, err := credentials.NewClientTLSFromFile("/home/n1cedek/GolandProjects/dz/auth/certificates/ca.cert", "")
+	if err != nil {
+		return err
 	}
 
-	err := desc.RegisterUserAPIHandlerFromEndpoint(ctx, mux, a.serviceProvider.GRPCConfig().Address(), opts)
+	opts := []grpc.DialOption{
+		grpc.WithTransportCredentials(creds),
+	}
+
+	err = desc.RegisterUserAPIHandlerFromEndpoint(ctx, mux, a.serviceProvider.GRPCConfig().Address(), opts)
 	if err != nil {
 		return err
 	}

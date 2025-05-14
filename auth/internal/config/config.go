@@ -1,6 +1,9 @@
 package env
 
-import "github.com/joho/godotenv"
+import (
+	"github.com/joho/godotenv"
+	"google.golang.org/grpc/credentials"
+)
 
 func Load(path string) error {
 	err := godotenv.Load(path)
@@ -20,4 +23,8 @@ type GPRCConfig interface {
 
 type HTTPConfig interface {
 	Address() string
+}
+
+type TLSConfig interface {
+	GetTLSConfig() (credentials.TransportCredentials, error)
 }

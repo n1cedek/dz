@@ -17,6 +17,7 @@ type serviceProvider struct {
 	pgConfig    env.PGConfig
 	grpcConfig  env.GPRCConfig
 	httpConfig  env.HTTPConfig
+	tlsConfig   env.TLSConfig
 	pgPool      *pgxpool.Pool
 	authService service.AuthService
 	authRepo    repo.AuthRepo
@@ -58,6 +59,17 @@ func (s *serviceProvider) PGConfig() env.PGConfig {
 		s.pgConfig = pgConfig
 	}
 	return s.pgConfig
+}
+
+func (s *serviceProvider) TLSConfig() env.TLSConfig {
+	if s.tlsConfig == nil {
+		tls, err := env.NewTLSConfig()
+		if err != nil {
+			log.Fatalf("failed to initialize TLS config: %v", err)
+		}
+		s.tlsConfig = tls
+	}
+	return s.tlsConfig
 }
 
 func (s *serviceProvider) PgPool(ctx context.Context) *pgxpool.Pool {
