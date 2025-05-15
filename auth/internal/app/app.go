@@ -5,6 +5,7 @@ import (
 	"dz/auth/internal/closer"
 	env "dz/auth/internal/config"
 	"dz/auth/internal/interceptor"
+	descAccess "dz/auth/pkg/access_v1"
 	desc "dz/auth/pkg/w1"
 	"flag"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -112,6 +113,8 @@ func (a *App) initGRPCServer(ctx context.Context) error {
 
 	reflection.Register(a.grpcServer)
 	desc.RegisterUserAPIServer(a.grpcServer, a.serviceProvider.AuthImpl(ctx))
+	descAccess.RegisterAccessV1Server(a.grpcServer, a.serviceProvider.AccessI(ctx))
+
 	return nil
 }
 
