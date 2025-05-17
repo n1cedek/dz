@@ -5,10 +5,13 @@ import (
 	"dz/auth/internal/closer"
 	env "dz/auth/internal/config"
 	"dz/auth/internal/interceptor"
+	"dz/auth/internal/metric"
 	descAccess "dz/auth/pkg/access_v1"
 	desc "dz/auth/pkg/w1"
 	"flag"
+	grpcMiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection"
@@ -59,6 +62,13 @@ func (a *App) Run() error {
 			log.Fatalf("failed to run HTTP server: %v", err)
 		}
 	}()
+
+	go func() {
+		err := runPrometheus()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
 	wg.Wait()
 
 	return nil
@@ -68,6 +78,7 @@ func (a *App) initDeps(ctx context.Context) error {
 	inits := []func(ctx2 context.Context) error{
 		a.initConfig,
 		a.initServiceProvider,
+		a.initMetrics,
 		a.initGRPCServer,
 		a.initHTTPServer,
 	}
@@ -99,6 +110,10 @@ func (a *App) initServiceProvider(_ context.Context) error {
 	return nil
 }
 
+func (a *App) initMetrics(ctx context.Context) error {
+	return metric.Init(ctx)
+}
+
 func (a *App) initGRPCServer(ctx context.Context) error {
 	cred, err := a.serviceProvider.TLSConfig().GetTLSConfig()
 	if err != nil {
@@ -108,8 +123,10 @@ func (a *App) initGRPCServer(ctx context.Context) error {
 
 	a.grpcServer = grpc.NewServer(
 		grpc.Creds(cred),
-		grpc.UnaryInterceptor(interceptor.ValidateInterceptor),
-	)
+		grpc.UnaryInterceptor(grpcMiddleware.ChainUnaryServer(
+			interceptor.ValidateInterceptor,
+			interceptor.MetricsInterceptor,
+		)))
 
 	reflection.Register(a.grpcServer)
 	desc.RegisterUserAPIServer(a.grpcServer, a.serviceProvider.AuthImpl(ctx))
@@ -161,5 +178,21 @@ func (a *App) runHTTPServer() error {
 		return err
 	}
 
+	return nil
+}
+
+func runPrometheus() error {
+	mux := http.NewServeMux()
+	mux.Handle("/metrics", promhttp.Handler())
+
+	prometheusServer := &http.Server{
+		Addr:    "localhost:2112",
+		Handler: mux,
+	}
+	log.Printf("Prometheus server is running on %s", "localhost:2112")
+	err := prometheusServer.ListenAndServe()
+	if err != nil {
+		return err
+	}
 	return nil
 }

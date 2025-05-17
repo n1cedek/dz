@@ -123,3 +123,29 @@ gen-cert:
 	# Используется конфигурационный файл для указания расширений сертификата
 	openssl x509 -req -in certificates/service.csr -CA certificates/ca.cert -CAkey certificates/ca.key -CAcreateserial \
     		-out certificates/service.pem -days 365 -sha256 -extfile certificate.conf -extensions req_ext
+
+grpc-load-test:
+	ghz \
+		--proto api/auth_api/auth.proto \
+		-i api/auth_api,vendor.protogen,vendor.protogen/google,vendor.protogen/validate \
+		--call auth_api.UserAPI.Get \
+		--data '{"id": 2}' \
+		--rps 100 \
+		--total 3000 \
+		--cacert certificates/ca.cert \
+        --cert certificates/service.pem \
+        --key certificates/service.key \
+		localhost:50051
+
+grpc-error-load-test:
+	ghz \
+		--proto api/auth_api/auth.proto \
+		-i api/auth_api,vendor.protogen,vendor.protogen/google,vendor.protogen/validate \
+		--call auth_api.UserAPI.Get \
+		--data '{"id": 0}' \
+		--rps 100 \
+		--total 3000 \
+		--cacert certificates/ca.cert \
+        --cert certificates/service.pem \
+        --key certificates/service.key \
+		localhost:50051
