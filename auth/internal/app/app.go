@@ -6,6 +6,7 @@ import (
 	env "dz/auth/internal/config"
 	"dz/auth/internal/interceptor"
 	"dz/auth/internal/metric"
+	"dz/auth/internal/rate_limiter"
 	descAccess "dz/auth/pkg/access_v1"
 	desc "dz/auth/pkg/w1"
 	"flag"
@@ -19,6 +20,7 @@ import (
 	"net"
 	"net/http"
 	"sync"
+	"time"
 )
 
 type App struct {
@@ -121,11 +123,14 @@ func (a *App) initGRPCServer(ctx context.Context) error {
 		return err
 	}
 
+	limiter := rate_limiter.NewTokenBucketLimiter(ctx, 10, time.Second)
+
 	a.grpcServer = grpc.NewServer(
 		grpc.Creds(cred),
 		grpc.UnaryInterceptor(grpcMiddleware.ChainUnaryServer(
 			interceptor.ValidateInterceptor,
 			interceptor.MetricsInterceptor,
+			interceptor.NewRateLimiterInterceptor(limiter).LimiterInterceptor,
 		)))
 
 	reflection.Register(a.grpcServer)

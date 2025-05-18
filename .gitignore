@@ -1,2 +1,4 @@
 .idea
 /dz/auth/bin/
+/auth/coverage.out
+/auth/bin
