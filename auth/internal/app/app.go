@@ -131,7 +131,9 @@ func (a *App) initGRPCServer(ctx context.Context) error {
 			interceptor.ValidateInterceptor,
 			interceptor.MetricsInterceptor,
 			interceptor.NewRateLimiterInterceptor(limiter).LimiterInterceptor,
-		)))
+			interceptor.NewCircuitInterceptor(interceptor.Breaker()).Unary),
+		),
+	)
 
 	reflection.Register(a.grpcServer)
 	desc.RegisterUserAPIServer(a.grpcServer, a.serviceProvider.AuthImpl(ctx))
