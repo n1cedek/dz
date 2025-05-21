@@ -8,6 +8,7 @@ import (
 	"dz/auth/internal/metric"
 	"dz/auth/internal/rate_limiter"
 	descAccess "dz/auth/pkg/access_v1"
+	descAuth "dz/auth/pkg/auth_v1"
 	desc "dz/auth/pkg/w1"
 	"flag"
 	grpcMiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
@@ -138,6 +139,7 @@ func (a *App) initGRPCServer(ctx context.Context) error {
 	reflection.Register(a.grpcServer)
 	desc.RegisterUserAPIServer(a.grpcServer, a.serviceProvider.AuthImpl(ctx))
 	descAccess.RegisterAccessV1Server(a.grpcServer, a.serviceProvider.AccessI(ctx))
+	descAuth.RegisterAuthV1Server(a.grpcServer, a.serviceProvider.AuthI(ctx))
 
 	return nil
 }

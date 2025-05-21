@@ -16,7 +16,7 @@ func GenerateToken(info model.UserInfo, secretKey []byte, duration time.Duration
 		Role:     info.Role,
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodES256, claim)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claim)
 
 	return token.SignedString(secretKey)
 }

@@ -6,6 +6,7 @@ import (
 	"dz/auth/internal/closer"
 	env "dz/auth/internal/config"
 	a2 "dz/auth/internal/delivery/grpc/access_handler"
+	a1 "dz/auth/internal/delivery/grpc/auth_handler"
 	"dz/auth/internal/repo"
 	authRepo "dz/auth/internal/repo/auth"
 	"dz/auth/internal/service"
@@ -14,6 +15,7 @@ import (
 	acServ "dz/auth/internal/service/jwt_service/access"
 	aServ "dz/auth/internal/service/jwt_service/auth"
 	descAccess "dz/auth/pkg/access_v1"
+	descAuth "dz/auth/pkg/auth_v1"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"log"
 )
@@ -30,6 +32,7 @@ type serviceProvider struct {
 	authRepo      repo.AuthRepo
 	authImpl      *auth2.Implementation
 	accessImpl    descAccess.AccessV1Server
+	aImpl         descAuth.AuthV1Server
 }
 
 func newServiceProvider() *serviceProvider {
@@ -124,6 +127,13 @@ func (s *serviceProvider) AuthS(ctx context.Context) jwt_service.AuthService {
 	}
 	return s.aService
 }
+func (s *serviceProvider) AuthI(ctx context.Context) descAuth.AuthV1Server {
+	if s.aImpl == nil {
+		s.aImpl = a1.NewAuthHandler(s.AuthS(ctx))
+	}
+	return s.aImpl
+}
+
 func (s *serviceProvider) AccessS(ctx context.Context) jwt_service.AccessService {
 	if s.accessService == nil {
 		s.accessService = acServ.NewAccessService()

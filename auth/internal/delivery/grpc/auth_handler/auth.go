@@ -8,10 +8,15 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type authService struct 
 type authService struct {
 	descAuth.UnimplementedAuthV1Server
 	authService jwt_service.AuthService
+}
+
+func NewAuthHandler(auth jwt_service.AuthService) descAuth.AuthV1Server {
+	return &authService{
+		authService: auth,
+	}
 }
 
 func (a *authService) Login(ctx context.Context, req *descAuth.LoginRequest) (*descAuth.LoginResponse, error) {
