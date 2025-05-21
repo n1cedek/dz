@@ -16,6 +16,7 @@ install-deps:
 	GOBIN=$(LOCAL_BIN) go install github.com/pressly/goose/v3/cmd/goose@v3.14.0
 	GOBIN=$(LOCAL_BIN) go install github.com/envoyproxy/protoc-gen-validate@v1.0.4
 	GOBIN=$(LOCAL_BIN) go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@v2.20.0
+	GOBIN=$(LOCAL_BIN) go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2@latest
 
 get-deps:
 	go get -u google.golang.org/protobuf/cmd/protoc-gen-go
@@ -30,6 +31,7 @@ generate:
 
 generate-note-api:
 	mkdir -p $(OUT_DIR)
+	mkdir -p pkg/swagger
 	protoc --proto_path=$(PROTO_DIR) \
 	--proto_path=vendor.protogen \
 	--proto_path=vendor.protogen/google \
@@ -42,6 +44,8 @@ generate-note-api:
     --plugin=protoc-gen-validate=bin/protoc-gen-validate \
 	--grpc-gateway_out=$(OUT_DIR) --grpc-gateway_opt=paths=source_relative \
     --plugin=protoc-gen-grpc-gateway=bin/protoc-gen-grpc-gateway \
+    --openapiv2_out=allow_merge=true,merge_file_name=api:pkg/swagger \
+    --plugin=protoc-gen-openapiv2=bin/protoc-gen-openapiv2 \
 	$(PROTO_FILE)
 
 generate-auth-api:

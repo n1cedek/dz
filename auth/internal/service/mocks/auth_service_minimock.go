@@ -2,7 +2,7 @@
 
 package mocks
 
-//go:generate minimock -i dz/auth/service.AuthService -o auth_service_minimock.go -n AuthServiceMock -p mocks
+//go:generate minimock -i dz/auth/internal/service.AuthService -o auth_service_minimock.go -n AuthServiceMock -p mocks
 
 import (
 	"context"
@@ -27,12 +27,26 @@ type AuthServiceMock struct {
 	beforeCreateCounter uint64
 	CreateMock          mAuthServiceMockCreate
 
+	funcDelete          func(ctx context.Context, id int64) (err error)
+	funcDeleteOrigin    string
+	inspectFuncDelete   func(ctx context.Context, id int64)
+	afterDeleteCounter  uint64
+	beforeDeleteCounter uint64
+	DeleteMock          mAuthServiceMockDelete
+
 	funcGet          func(ctx context.Context, id int64) (pp1 *model.PublicInfo, err error)
 	funcGetOrigin    string
 	inspectFuncGet   func(ctx context.Context, id int64)
 	afterGetCounter  uint64
 	beforeGetCounter uint64
 	GetMock          mAuthServiceMockGet
+
+	funcUpdate          func(ctx context.Context, id int64, info *model.User) (err error)
+	funcUpdateOrigin    string
+	inspectFuncUpdate   func(ctx context.Context, id int64, info *model.User)
+	afterUpdateCounter  uint64
+	beforeUpdateCounter uint64
+	UpdateMock          mAuthServiceMockUpdate
 }
 
 // NewAuthServiceMock returns a mock for mm_service.AuthService
@@ -46,8 +60,14 @@ func NewAuthServiceMock(t minimock.Tester) *AuthServiceMock {
 	m.CreateMock = mAuthServiceMockCreate{mock: m}
 	m.CreateMock.callArgs = []*AuthServiceMockCreateParams{}
 
+	m.DeleteMock = mAuthServiceMockDelete{mock: m}
+	m.DeleteMock.callArgs = []*AuthServiceMockDeleteParams{}
+
 	m.GetMock = mAuthServiceMockGet{mock: m}
 	m.GetMock.callArgs = []*AuthServiceMockGetParams{}
+
+	m.UpdateMock = mAuthServiceMockUpdate{mock: m}
+	m.UpdateMock.callArgs = []*AuthServiceMockUpdateParams{}
 
 	t.Cleanup(m.MinimockFinish)
 
@@ -397,6 +417,348 @@ func (m *AuthServiceMock) MinimockCreateInspect() {
 	}
 }
 
+type mAuthServiceMockDelete struct {
+	optional           bool
+	mock               *AuthServiceMock
+	defaultExpectation *AuthServiceMockDeleteExpectation
+	expectations       []*AuthServiceMockDeleteExpectation
+
+	callArgs []*AuthServiceMockDeleteParams
+	mutex    sync.RWMutex
+
+	expectedInvocations       uint64
+	expectedInvocationsOrigin string
+}
+
+// AuthServiceMockDeleteExpectation specifies expectation struct of the AuthService.Delete
+type AuthServiceMockDeleteExpectation struct {
+	mock               *AuthServiceMock
+	params             *AuthServiceMockDeleteParams
+	paramPtrs          *AuthServiceMockDeleteParamPtrs
+	expectationOrigins AuthServiceMockDeleteExpectationOrigins
+	results            *AuthServiceMockDeleteResults
+	returnOrigin       string
+	Counter            uint64
+}
+
+// AuthServiceMockDeleteParams contains parameters of the AuthService.Delete
+type AuthServiceMockDeleteParams struct {
+	ctx context.Context
+	id  int64
+}
+
+// AuthServiceMockDeleteParamPtrs contains pointers to parameters of the AuthService.Delete
+type AuthServiceMockDeleteParamPtrs struct {
+	ctx *context.Context
+	id  *int64
+}
+
+// AuthServiceMockDeleteResults contains results of the AuthService.Delete
+type AuthServiceMockDeleteResults struct {
+	err error
+}
+
+// AuthServiceMockDeleteOrigins contains origins of expectations of the AuthService.Delete
+type AuthServiceMockDeleteExpectationOrigins struct {
+	origin    string
+	originCtx string
+	originId  string
+}
+
+// Marks this method to be optional. The default behavior of any method with Return() is '1 or more', meaning
+// the test will fail minimock's automatic final call check if the mocked method was not called at least once.
+// Optional() makes method check to work in '0 or more' mode.
+// It is NOT RECOMMENDED to use this option unless you really need it, as default behaviour helps to
+// catch the problems when the expected method call is totally skipped during test run.
+func (mmDelete *mAuthServiceMockDelete) Optional() *mAuthServiceMockDelete {
+	mmDelete.optional = true
+	return mmDelete
+}
+
+// Expect sets up expected params for AuthService.Delete
+func (mmDelete *mAuthServiceMockDelete) Expect(ctx context.Context, id int64) *mAuthServiceMockDelete {
+	if mmDelete.mock.funcDelete != nil {
+		mmDelete.mock.t.Fatalf("AuthServiceMock.Delete mock is already set by Set")
+	}
+
+	if mmDelete.defaultExpectation == nil {
+		mmDelete.defaultExpectation = &AuthServiceMockDeleteExpectation{}
+	}
+
+	if mmDelete.defaultExpectation.paramPtrs != nil {
+		mmDelete.mock.t.Fatalf("AuthServiceMock.Delete mock is already set by ExpectParams functions")
+	}
+
+	mmDelete.defaultExpectation.params = &AuthServiceMockDeleteParams{ctx, id}
+	mmDelete.defaultExpectation.expectationOrigins.origin = minimock.CallerInfo(1)
+	for _, e := range mmDelete.expectations {
+		if minimock.Equal(e.params, mmDelete.defaultExpectation.params) {
+			mmDelete.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmDelete.defaultExpectation.params)
+		}
+	}
+
+	return mmDelete
+}
+
+// ExpectCtxParam1 sets up expected param ctx for AuthService.Delete
+func (mmDelete *mAuthServiceMockDelete) ExpectCtxParam1(ctx context.Context) *mAuthServiceMockDelete {
+	if mmDelete.mock.funcDelete != nil {
+		mmDelete.mock.t.Fatalf("AuthServiceMock.Delete mock is already set by Set")
+	}
+
+	if mmDelete.defaultExpectation == nil {
+		mmDelete.defaultExpectation = &AuthServiceMockDeleteExpectation{}
+	}
+
+	if mmDelete.defaultExpectation.params != nil {
+		mmDelete.mock.t.Fatalf("AuthServiceMock.Delete mock is already set by Expect")
+	}
+
+	if mmDelete.defaultExpectation.paramPtrs == nil {
+		mmDelete.defaultExpectation.paramPtrs = &AuthServiceMockDeleteParamPtrs{}
+	}
+	mmDelete.defaultExpectation.paramPtrs.ctx = &ctx
+	mmDelete.defaultExpectation.expectationOrigins.originCtx = minimock.CallerInfo(1)
+
+	return mmDelete
+}
+
+// ExpectIdParam2 sets up expected param id for AuthService.Delete
+func (mmDelete *mAuthServiceMockDelete) ExpectIdParam2(id int64) *mAuthServiceMockDelete {
+	if mmDelete.mock.funcDelete != nil {
+		mmDelete.mock.t.Fatalf("AuthServiceMock.Delete mock is already set by Set")
+	}
+
+	if mmDelete.defaultExpectation == nil {
+		mmDelete.defaultExpectation = &AuthServiceMockDeleteExpectation{}
+	}
+
+	if mmDelete.defaultExpectation.params != nil {
+		mmDelete.mock.t.Fatalf("AuthServiceMock.Delete mock is already set by Expect")
+	}
+
+	if mmDelete.defaultExpectation.paramPtrs == nil {
+		mmDelete.defaultExpectation.paramPtrs = &AuthServiceMockDeleteParamPtrs{}
+	}
+	mmDelete.defaultExpectation.paramPtrs.id = &id
+	mmDelete.defaultExpectation.expectationOrigins.originId = minimock.CallerInfo(1)
+
+	return mmDelete
+}
+
+// Inspect accepts an inspector function that has same arguments as the AuthService.Delete
+func (mmDelete *mAuthServiceMockDelete) Inspect(f func(ctx context.Context, id int64)) *mAuthServiceMockDelete {
+	if mmDelete.mock.inspectFuncDelete != nil {
+		mmDelete.mock.t.Fatalf("Inspect function is already set for AuthServiceMock.Delete")
+	}
+
+	mmDelete.mock.inspectFuncDelete = f
+
+	return mmDelete
+}
+
+// Return sets up results that will be returned by AuthService.Delete
+func (mmDelete *mAuthServiceMockDelete) Return(err error) *AuthServiceMock {
+	if mmDelete.mock.funcDelete != nil {
+		mmDelete.mock.t.Fatalf("AuthServiceMock.Delete mock is already set by Set")
+	}
+
+	if mmDelete.defaultExpectation == nil {
+		mmDelete.defaultExpectation = &AuthServiceMockDeleteExpectation{mock: mmDelete.mock}
+	}
+	mmDelete.defaultExpectation.results = &AuthServiceMockDeleteResults{err}
+	mmDelete.defaultExpectation.returnOrigin = minimock.CallerInfo(1)
+	return mmDelete.mock
+}
+
+// Set uses given function f to mock the AuthService.Delete method
+func (mmDelete *mAuthServiceMockDelete) Set(f func(ctx context.Context, id int64) (err error)) *AuthServiceMock {
+	if mmDelete.defaultExpectation != nil {
+		mmDelete.mock.t.Fatalf("Default expectation is already set for the AuthService.Delete method")
+	}
+
+	if len(mmDelete.expectations) > 0 {
+		mmDelete.mock.t.Fatalf("Some expectations are already set for the AuthService.Delete method")
+	}
+
+	mmDelete.mock.funcDelete = f
+	mmDelete.mock.funcDeleteOrigin = minimock.CallerInfo(1)
+	return mmDelete.mock
+}
+
+// When sets expectation for the AuthService.Delete which will trigger the result defined by the following
+// Then helper
+func (mmDelete *mAuthServiceMockDelete) When(ctx context.Context, id int64) *AuthServiceMockDeleteExpectation {
+	if mmDelete.mock.funcDelete != nil {
+		mmDelete.mock.t.Fatalf("AuthServiceMock.Delete mock is already set by Set")
+	}
+
+	expectation := &AuthServiceMockDeleteExpectation{
+		mock:               mmDelete.mock,
+		params:             &AuthServiceMockDeleteParams{ctx, id},
+		expectationOrigins: AuthServiceMockDeleteExpectationOrigins{origin: minimock.CallerInfo(1)},
+	}
+	mmDelete.expectations = append(mmDelete.expectations, expectation)
+	return expectation
+}
+
+// Then sets up AuthService.Delete return parameters for the expectation previously defined by the When method
+func (e *AuthServiceMockDeleteExpectation) Then(err error) *AuthServiceMock {
+	e.results = &AuthServiceMockDeleteResults{err}
+	return e.mock
+}
+
+// Times sets number of times AuthService.Delete should be invoked
+func (mmDelete *mAuthServiceMockDelete) Times(n uint64) *mAuthServiceMockDelete {
+	if n == 0 {
+		mmDelete.mock.t.Fatalf("Times of AuthServiceMock.Delete mock can not be zero")
+	}
+	mm_atomic.StoreUint64(&mmDelete.expectedInvocations, n)
+	mmDelete.expectedInvocationsOrigin = minimock.CallerInfo(1)
+	return mmDelete
+}
+
+func (mmDelete *mAuthServiceMockDelete) invocationsDone() bool {
+	if len(mmDelete.expectations) == 0 && mmDelete.defaultExpectation == nil && mmDelete.mock.funcDelete == nil {
+		return true
+	}
+
+	totalInvocations := mm_atomic.LoadUint64(&mmDelete.mock.afterDeleteCounter)
+	expectedInvocations := mm_atomic.LoadUint64(&mmDelete.expectedInvocations)
+
+	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
+}
+
+// Delete implements mm_service.AuthService
+func (mmDelete *AuthServiceMock) Delete(ctx context.Context, id int64) (err error) {
+	mm_atomic.AddUint64(&mmDelete.beforeDeleteCounter, 1)
+	defer mm_atomic.AddUint64(&mmDelete.afterDeleteCounter, 1)
+
+	mmDelete.t.Helper()
+
+	if mmDelete.inspectFuncDelete != nil {
+		mmDelete.inspectFuncDelete(ctx, id)
+	}
+
+	mm_params := AuthServiceMockDeleteParams{ctx, id}
+
+	// Record call args
+	mmDelete.DeleteMock.mutex.Lock()
+	mmDelete.DeleteMock.callArgs = append(mmDelete.DeleteMock.callArgs, &mm_params)
+	mmDelete.DeleteMock.mutex.Unlock()
+
+	for _, e := range mmDelete.DeleteMock.expectations {
+		if minimock.Equal(*e.params, mm_params) {
+			mm_atomic.AddUint64(&e.Counter, 1)
+			return e.results.err
+		}
+	}
+
+	if mmDelete.DeleteMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmDelete.DeleteMock.defaultExpectation.Counter, 1)
+		mm_want := mmDelete.DeleteMock.defaultExpectation.params
+		mm_want_ptrs := mmDelete.DeleteMock.defaultExpectation.paramPtrs
+
+		mm_got := AuthServiceMockDeleteParams{ctx, id}
+
+		if mm_want_ptrs != nil {
+
+			if mm_want_ptrs.ctx != nil && !minimock.Equal(*mm_want_ptrs.ctx, mm_got.ctx) {
+				mmDelete.t.Errorf("AuthServiceMock.Delete got unexpected parameter ctx, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmDelete.DeleteMock.defaultExpectation.expectationOrigins.originCtx, *mm_want_ptrs.ctx, mm_got.ctx, minimock.Diff(*mm_want_ptrs.ctx, mm_got.ctx))
+			}
+
+			if mm_want_ptrs.id != nil && !minimock.Equal(*mm_want_ptrs.id, mm_got.id) {
+				mmDelete.t.Errorf("AuthServiceMock.Delete got unexpected parameter id, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmDelete.DeleteMock.defaultExpectation.expectationOrigins.originId, *mm_want_ptrs.id, mm_got.id, minimock.Diff(*mm_want_ptrs.id, mm_got.id))
+			}
+
+		} else if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
+			mmDelete.t.Errorf("AuthServiceMock.Delete got unexpected parameters, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+				mmDelete.DeleteMock.defaultExpectation.expectationOrigins.origin, *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+		}
+
+		mm_results := mmDelete.DeleteMock.defaultExpectation.results
+		if mm_results == nil {
+			mmDelete.t.Fatal("No results are set for the AuthServiceMock.Delete")
+		}
+		return (*mm_results).err
+	}
+	if mmDelete.funcDelete != nil {
+		return mmDelete.funcDelete(ctx, id)
+	}
+	mmDelete.t.Fatalf("Unexpected call to AuthServiceMock.Delete. %v %v", ctx, id)
+	return
+}
+
+// DeleteAfterCounter returns a count of finished AuthServiceMock.Delete invocations
+func (mmDelete *AuthServiceMock) DeleteAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmDelete.afterDeleteCounter)
+}
+
+// DeleteBeforeCounter returns a count of AuthServiceMock.Delete invocations
+func (mmDelete *AuthServiceMock) DeleteBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmDelete.beforeDeleteCounter)
+}
+
+// Calls returns a list of arguments used in each call to AuthServiceMock.Delete.
+// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
+func (mmDelete *mAuthServiceMockDelete) Calls() []*AuthServiceMockDeleteParams {
+	mmDelete.mutex.RLock()
+
+	argCopy := make([]*AuthServiceMockDeleteParams, len(mmDelete.callArgs))
+	copy(argCopy, mmDelete.callArgs)
+
+	mmDelete.mutex.RUnlock()
+
+	return argCopy
+}
+
+// MinimockDeleteDone returns true if the count of the Delete invocations corresponds
+// the number of defined expectations
+func (m *AuthServiceMock) MinimockDeleteDone() bool {
+	if m.DeleteMock.optional {
+		// Optional methods provide '0 or more' call count restriction.
+		return true
+	}
+
+	for _, e := range m.DeleteMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	return m.DeleteMock.invocationsDone()
+}
+
+// MinimockDeleteInspect logs each unmet expectation
+func (m *AuthServiceMock) MinimockDeleteInspect() {
+	for _, e := range m.DeleteMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Errorf("Expected call to AuthServiceMock.Delete at\n%s with params: %#v", e.expectationOrigins.origin, *e.params)
+		}
+	}
+
+	afterDeleteCounter := mm_atomic.LoadUint64(&m.afterDeleteCounter)
+	// if default expectation was set then invocations count should be greater than zero
+	if m.DeleteMock.defaultExpectation != nil && afterDeleteCounter < 1 {
+		if m.DeleteMock.defaultExpectation.params == nil {
+			m.t.Errorf("Expected call to AuthServiceMock.Delete at\n%s", m.DeleteMock.defaultExpectation.returnOrigin)
+		} else {
+			m.t.Errorf("Expected call to AuthServiceMock.Delete at\n%s with params: %#v", m.DeleteMock.defaultExpectation.expectationOrigins.origin, *m.DeleteMock.defaultExpectation.params)
+		}
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcDelete != nil && afterDeleteCounter < 1 {
+		m.t.Errorf("Expected call to AuthServiceMock.Delete at\n%s", m.funcDeleteOrigin)
+	}
+
+	if !m.DeleteMock.invocationsDone() && afterDeleteCounter > 0 {
+		m.t.Errorf("Expected %d calls to AuthServiceMock.Delete at\n%s but found %d calls",
+			mm_atomic.LoadUint64(&m.DeleteMock.expectedInvocations), m.DeleteMock.expectedInvocationsOrigin, afterDeleteCounter)
+	}
+}
+
 type mAuthServiceMockGet struct {
 	optional           bool
 	mock               *AuthServiceMock
@@ -740,13 +1102,390 @@ func (m *AuthServiceMock) MinimockGetInspect() {
 	}
 }
 
+type mAuthServiceMockUpdate struct {
+	optional           bool
+	mock               *AuthServiceMock
+	defaultExpectation *AuthServiceMockUpdateExpectation
+	expectations       []*AuthServiceMockUpdateExpectation
+
+	callArgs []*AuthServiceMockUpdateParams
+	mutex    sync.RWMutex
+
+	expectedInvocations       uint64
+	expectedInvocationsOrigin string
+}
+
+// AuthServiceMockUpdateExpectation specifies expectation struct of the AuthService.Update
+type AuthServiceMockUpdateExpectation struct {
+	mock               *AuthServiceMock
+	params             *AuthServiceMockUpdateParams
+	paramPtrs          *AuthServiceMockUpdateParamPtrs
+	expectationOrigins AuthServiceMockUpdateExpectationOrigins
+	results            *AuthServiceMockUpdateResults
+	returnOrigin       string
+	Counter            uint64
+}
+
+// AuthServiceMockUpdateParams contains parameters of the AuthService.Update
+type AuthServiceMockUpdateParams struct {
+	ctx  context.Context
+	id   int64
+	info *model.User
+}
+
+// AuthServiceMockUpdateParamPtrs contains pointers to parameters of the AuthService.Update
+type AuthServiceMockUpdateParamPtrs struct {
+	ctx  *context.Context
+	id   *int64
+	info **model.User
+}
+
+// AuthServiceMockUpdateResults contains results of the AuthService.Update
+type AuthServiceMockUpdateResults struct {
+	err error
+}
+
+// AuthServiceMockUpdateOrigins contains origins of expectations of the AuthService.Update
+type AuthServiceMockUpdateExpectationOrigins struct {
+	origin     string
+	originCtx  string
+	originId   string
+	originInfo string
+}
+
+// Marks this method to be optional. The default behavior of any method with Return() is '1 or more', meaning
+// the test will fail minimock's automatic final call check if the mocked method was not called at least once.
+// Optional() makes method check to work in '0 or more' mode.
+// It is NOT RECOMMENDED to use this option unless you really need it, as default behaviour helps to
+// catch the problems when the expected method call is totally skipped during test run.
+func (mmUpdate *mAuthServiceMockUpdate) Optional() *mAuthServiceMockUpdate {
+	mmUpdate.optional = true
+	return mmUpdate
+}
+
+// Expect sets up expected params for AuthService.Update
+func (mmUpdate *mAuthServiceMockUpdate) Expect(ctx context.Context, id int64, info *model.User) *mAuthServiceMockUpdate {
+	if mmUpdate.mock.funcUpdate != nil {
+		mmUpdate.mock.t.Fatalf("AuthServiceMock.Update mock is already set by Set")
+	}
+
+	if mmUpdate.defaultExpectation == nil {
+		mmUpdate.defaultExpectation = &AuthServiceMockUpdateExpectation{}
+	}
+
+	if mmUpdate.defaultExpectation.paramPtrs != nil {
+		mmUpdate.mock.t.Fatalf("AuthServiceMock.Update mock is already set by ExpectParams functions")
+	}
+
+	mmUpdate.defaultExpectation.params = &AuthServiceMockUpdateParams{ctx, id, info}
+	mmUpdate.defaultExpectation.expectationOrigins.origin = minimock.CallerInfo(1)
+	for _, e := range mmUpdate.expectations {
+		if minimock.Equal(e.params, mmUpdate.defaultExpectation.params) {
+			mmUpdate.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmUpdate.defaultExpectation.params)
+		}
+	}
+
+	return mmUpdate
+}
+
+// ExpectCtxParam1 sets up expected param ctx for AuthService.Update
+func (mmUpdate *mAuthServiceMockUpdate) ExpectCtxParam1(ctx context.Context) *mAuthServiceMockUpdate {
+	if mmUpdate.mock.funcUpdate != nil {
+		mmUpdate.mock.t.Fatalf("AuthServiceMock.Update mock is already set by Set")
+	}
+
+	if mmUpdate.defaultExpectation == nil {
+		mmUpdate.defaultExpectation = &AuthServiceMockUpdateExpectation{}
+	}
+
+	if mmUpdate.defaultExpectation.params != nil {
+		mmUpdate.mock.t.Fatalf("AuthServiceMock.Update mock is already set by Expect")
+	}
+
+	if mmUpdate.defaultExpectation.paramPtrs == nil {
+		mmUpdate.defaultExpectation.paramPtrs = &AuthServiceMockUpdateParamPtrs{}
+	}
+	mmUpdate.defaultExpectation.paramPtrs.ctx = &ctx
+	mmUpdate.defaultExpectation.expectationOrigins.originCtx = minimock.CallerInfo(1)
+
+	return mmUpdate
+}
+
+// ExpectIdParam2 sets up expected param id for AuthService.Update
+func (mmUpdate *mAuthServiceMockUpdate) ExpectIdParam2(id int64) *mAuthServiceMockUpdate {
+	if mmUpdate.mock.funcUpdate != nil {
+		mmUpdate.mock.t.Fatalf("AuthServiceMock.Update mock is already set by Set")
+	}
+
+	if mmUpdate.defaultExpectation == nil {
+		mmUpdate.defaultExpectation = &AuthServiceMockUpdateExpectation{}
+	}
+
+	if mmUpdate.defaultExpectation.params != nil {
+		mmUpdate.mock.t.Fatalf("AuthServiceMock.Update mock is already set by Expect")
+	}
+
+	if mmUpdate.defaultExpectation.paramPtrs == nil {
+		mmUpdate.defaultExpectation.paramPtrs = &AuthServiceMockUpdateParamPtrs{}
+	}
+	mmUpdate.defaultExpectation.paramPtrs.id = &id
+	mmUpdate.defaultExpectation.expectationOrigins.originId = minimock.CallerInfo(1)
+
+	return mmUpdate
+}
+
+// ExpectInfoParam3 sets up expected param info for AuthService.Update
+func (mmUpdate *mAuthServiceMockUpdate) ExpectInfoParam3(info *model.User) *mAuthServiceMockUpdate {
+	if mmUpdate.mock.funcUpdate != nil {
+		mmUpdate.mock.t.Fatalf("AuthServiceMock.Update mock is already set by Set")
+	}
+
+	if mmUpdate.defaultExpectation == nil {
+		mmUpdate.defaultExpectation = &AuthServiceMockUpdateExpectation{}
+	}
+
+	if mmUpdate.defaultExpectation.params != nil {
+		mmUpdate.mock.t.Fatalf("AuthServiceMock.Update mock is already set by Expect")
+	}
+
+	if mmUpdate.defaultExpectation.paramPtrs == nil {
+		mmUpdate.defaultExpectation.paramPtrs = &AuthServiceMockUpdateParamPtrs{}
+	}
+	mmUpdate.defaultExpectation.paramPtrs.info = &info
+	mmUpdate.defaultExpectation.expectationOrigins.originInfo = minimock.CallerInfo(1)
+
+	return mmUpdate
+}
+
+// Inspect accepts an inspector function that has same arguments as the AuthService.Update
+func (mmUpdate *mAuthServiceMockUpdate) Inspect(f func(ctx context.Context, id int64, info *model.User)) *mAuthServiceMockUpdate {
+	if mmUpdate.mock.inspectFuncUpdate != nil {
+		mmUpdate.mock.t.Fatalf("Inspect function is already set for AuthServiceMock.Update")
+	}
+
+	mmUpdate.mock.inspectFuncUpdate = f
+
+	return mmUpdate
+}
+
+// Return sets up results that will be returned by AuthService.Update
+func (mmUpdate *mAuthServiceMockUpdate) Return(err error) *AuthServiceMock {
+	if mmUpdate.mock.funcUpdate != nil {
+		mmUpdate.mock.t.Fatalf("AuthServiceMock.Update mock is already set by Set")
+	}
+
+	if mmUpdate.defaultExpectation == nil {
+		mmUpdate.defaultExpectation = &AuthServiceMockUpdateExpectation{mock: mmUpdate.mock}
+	}
+	mmUpdate.defaultExpectation.results = &AuthServiceMockUpdateResults{err}
+	mmUpdate.defaultExpectation.returnOrigin = minimock.CallerInfo(1)
+	return mmUpdate.mock
+}
+
+// Set uses given function f to mock the AuthService.Update method
+func (mmUpdate *mAuthServiceMockUpdate) Set(f func(ctx context.Context, id int64, info *model.User) (err error)) *AuthServiceMock {
+	if mmUpdate.defaultExpectation != nil {
+		mmUpdate.mock.t.Fatalf("Default expectation is already set for the AuthService.Update method")
+	}
+
+	if len(mmUpdate.expectations) > 0 {
+		mmUpdate.mock.t.Fatalf("Some expectations are already set for the AuthService.Update method")
+	}
+
+	mmUpdate.mock.funcUpdate = f
+	mmUpdate.mock.funcUpdateOrigin = minimock.CallerInfo(1)
+	return mmUpdate.mock
+}
+
+// When sets expectation for the AuthService.Update which will trigger the result defined by the following
+// Then helper
+func (mmUpdate *mAuthServiceMockUpdate) When(ctx context.Context, id int64, info *model.User) *AuthServiceMockUpdateExpectation {
+	if mmUpdate.mock.funcUpdate != nil {
+		mmUpdate.mock.t.Fatalf("AuthServiceMock.Update mock is already set by Set")
+	}
+
+	expectation := &AuthServiceMockUpdateExpectation{
+		mock:               mmUpdate.mock,
+		params:             &AuthServiceMockUpdateParams{ctx, id, info},
+		expectationOrigins: AuthServiceMockUpdateExpectationOrigins{origin: minimock.CallerInfo(1)},
+	}
+	mmUpdate.expectations = append(mmUpdate.expectations, expectation)
+	return expectation
+}
+
+// Then sets up AuthService.Update return parameters for the expectation previously defined by the When method
+func (e *AuthServiceMockUpdateExpectation) Then(err error) *AuthServiceMock {
+	e.results = &AuthServiceMockUpdateResults{err}
+	return e.mock
+}
+
+// Times sets number of times AuthService.Update should be invoked
+func (mmUpdate *mAuthServiceMockUpdate) Times(n uint64) *mAuthServiceMockUpdate {
+	if n == 0 {
+		mmUpdate.mock.t.Fatalf("Times of AuthServiceMock.Update mock can not be zero")
+	}
+	mm_atomic.StoreUint64(&mmUpdate.expectedInvocations, n)
+	mmUpdate.expectedInvocationsOrigin = minimock.CallerInfo(1)
+	return mmUpdate
+}
+
+func (mmUpdate *mAuthServiceMockUpdate) invocationsDone() bool {
+	if len(mmUpdate.expectations) == 0 && mmUpdate.defaultExpectation == nil && mmUpdate.mock.funcUpdate == nil {
+		return true
+	}
+
+	totalInvocations := mm_atomic.LoadUint64(&mmUpdate.mock.afterUpdateCounter)
+	expectedInvocations := mm_atomic.LoadUint64(&mmUpdate.expectedInvocations)
+
+	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
+}
+
+// Update implements mm_service.AuthService
+func (mmUpdate *AuthServiceMock) Update(ctx context.Context, id int64, info *model.User) (err error) {
+	mm_atomic.AddUint64(&mmUpdate.beforeUpdateCounter, 1)
+	defer mm_atomic.AddUint64(&mmUpdate.afterUpdateCounter, 1)
+
+	mmUpdate.t.Helper()
+
+	if mmUpdate.inspectFuncUpdate != nil {
+		mmUpdate.inspectFuncUpdate(ctx, id, info)
+	}
+
+	mm_params := AuthServiceMockUpdateParams{ctx, id, info}
+
+	// Record call args
+	mmUpdate.UpdateMock.mutex.Lock()
+	mmUpdate.UpdateMock.callArgs = append(mmUpdate.UpdateMock.callArgs, &mm_params)
+	mmUpdate.UpdateMock.mutex.Unlock()
+
+	for _, e := range mmUpdate.UpdateMock.expectations {
+		if minimock.Equal(*e.params, mm_params) {
+			mm_atomic.AddUint64(&e.Counter, 1)
+			return e.results.err
+		}
+	}
+
+	if mmUpdate.UpdateMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmUpdate.UpdateMock.defaultExpectation.Counter, 1)
+		mm_want := mmUpdate.UpdateMock.defaultExpectation.params
+		mm_want_ptrs := mmUpdate.UpdateMock.defaultExpectation.paramPtrs
+
+		mm_got := AuthServiceMockUpdateParams{ctx, id, info}
+
+		if mm_want_ptrs != nil {
+
+			if mm_want_ptrs.ctx != nil && !minimock.Equal(*mm_want_ptrs.ctx, mm_got.ctx) {
+				mmUpdate.t.Errorf("AuthServiceMock.Update got unexpected parameter ctx, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmUpdate.UpdateMock.defaultExpectation.expectationOrigins.originCtx, *mm_want_ptrs.ctx, mm_got.ctx, minimock.Diff(*mm_want_ptrs.ctx, mm_got.ctx))
+			}
+
+			if mm_want_ptrs.id != nil && !minimock.Equal(*mm_want_ptrs.id, mm_got.id) {
+				mmUpdate.t.Errorf("AuthServiceMock.Update got unexpected parameter id, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmUpdate.UpdateMock.defaultExpectation.expectationOrigins.originId, *mm_want_ptrs.id, mm_got.id, minimock.Diff(*mm_want_ptrs.id, mm_got.id))
+			}
+
+			if mm_want_ptrs.info != nil && !minimock.Equal(*mm_want_ptrs.info, mm_got.info) {
+				mmUpdate.t.Errorf("AuthServiceMock.Update got unexpected parameter info, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmUpdate.UpdateMock.defaultExpectation.expectationOrigins.originInfo, *mm_want_ptrs.info, mm_got.info, minimock.Diff(*mm_want_ptrs.info, mm_got.info))
+			}
+
+		} else if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
+			mmUpdate.t.Errorf("AuthServiceMock.Update got unexpected parameters, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+				mmUpdate.UpdateMock.defaultExpectation.expectationOrigins.origin, *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+		}
+
+		mm_results := mmUpdate.UpdateMock.defaultExpectation.results
+		if mm_results == nil {
+			mmUpdate.t.Fatal("No results are set for the AuthServiceMock.Update")
+		}
+		return (*mm_results).err
+	}
+	if mmUpdate.funcUpdate != nil {
+		return mmUpdate.funcUpdate(ctx, id, info)
+	}
+	mmUpdate.t.Fatalf("Unexpected call to AuthServiceMock.Update. %v %v %v", ctx, id, info)
+	return
+}
+
+// UpdateAfterCounter returns a count of finished AuthServiceMock.Update invocations
+func (mmUpdate *AuthServiceMock) UpdateAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmUpdate.afterUpdateCounter)
+}
+
+// UpdateBeforeCounter returns a count of AuthServiceMock.Update invocations
+func (mmUpdate *AuthServiceMock) UpdateBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmUpdate.beforeUpdateCounter)
+}
+
+// Calls returns a list of arguments used in each call to AuthServiceMock.Update.
+// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
+func (mmUpdate *mAuthServiceMockUpdate) Calls() []*AuthServiceMockUpdateParams {
+	mmUpdate.mutex.RLock()
+
+	argCopy := make([]*AuthServiceMockUpdateParams, len(mmUpdate.callArgs))
+	copy(argCopy, mmUpdate.callArgs)
+
+	mmUpdate.mutex.RUnlock()
+
+	return argCopy
+}
+
+// MinimockUpdateDone returns true if the count of the Update invocations corresponds
+// the number of defined expectations
+func (m *AuthServiceMock) MinimockUpdateDone() bool {
+	if m.UpdateMock.optional {
+		// Optional methods provide '0 or more' call count restriction.
+		return true
+	}
+
+	for _, e := range m.UpdateMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	return m.UpdateMock.invocationsDone()
+}
+
+// MinimockUpdateInspect logs each unmet expectation
+func (m *AuthServiceMock) MinimockUpdateInspect() {
+	for _, e := range m.UpdateMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Errorf("Expected call to AuthServiceMock.Update at\n%s with params: %#v", e.expectationOrigins.origin, *e.params)
+		}
+	}
+
+	afterUpdateCounter := mm_atomic.LoadUint64(&m.afterUpdateCounter)
+	// if default expectation was set then invocations count should be greater than zero
+	if m.UpdateMock.defaultExpectation != nil && afterUpdateCounter < 1 {
+		if m.UpdateMock.defaultExpectation.params == nil {
+			m.t.Errorf("Expected call to AuthServiceMock.Update at\n%s", m.UpdateMock.defaultExpectation.returnOrigin)
+		} else {
+			m.t.Errorf("Expected call to AuthServiceMock.Update at\n%s with params: %#v", m.UpdateMock.defaultExpectation.expectationOrigins.origin, *m.UpdateMock.defaultExpectation.params)
+		}
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcUpdate != nil && afterUpdateCounter < 1 {
+		m.t.Errorf("Expected call to AuthServiceMock.Update at\n%s", m.funcUpdateOrigin)
+	}
+
+	if !m.UpdateMock.invocationsDone() && afterUpdateCounter > 0 {
+		m.t.Errorf("Expected %d calls to AuthServiceMock.Update at\n%s but found %d calls",
+			mm_atomic.LoadUint64(&m.UpdateMock.expectedInvocations), m.UpdateMock.expectedInvocationsOrigin, afterUpdateCounter)
+	}
+}
+
 // MinimockFinish checks that all mocked methods have been called the expected number of times
 func (m *AuthServiceMock) MinimockFinish() {
 	m.finishOnce.Do(func() {
 		if !m.minimockDone() {
 			m.MinimockCreateInspect()
 
+			m.MinimockDeleteInspect()
+
 			m.MinimockGetInspect()
+
+			m.MinimockUpdateInspect()
 		}
 	})
 }
@@ -771,5 +1510,7 @@ func (m *AuthServiceMock) minimockDone() bool {
 	done := true
 	return done &&
 		m.MinimockCreateDone() &&
-		m.MinimockGetDone()
+		m.MinimockDeleteDone() &&
+		m.MinimockGetDone() &&
+		m.MinimockUpdateDone()
 }

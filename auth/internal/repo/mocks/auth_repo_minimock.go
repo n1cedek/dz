@@ -2,7 +2,7 @@
 
 package mocks
 
-//go:generate minimock -i dz/auth/repo.AuthRepo -o auth_repo_minimock.go -n AuthRepoMock -p mocks
+//go:generate minimock -i dz/auth/internal/repo.AuthRepo -o auth_repo_minimock.go -n AuthRepoMock -p mocks
 
 import (
 	"context"
@@ -27,12 +27,26 @@ type AuthRepoMock struct {
 	beforeCreateCounter uint64
 	CreateMock          mAuthRepoMockCreate
 
+	funcDelete          func(ctx context.Context, id int64) (err error)
+	funcDeleteOrigin    string
+	inspectFuncDelete   func(ctx context.Context, id int64)
+	afterDeleteCounter  uint64
+	beforeDeleteCounter uint64
+	DeleteMock          mAuthRepoMockDelete
+
 	funcGet          func(ctx context.Context, id int64) (pp1 *model.PublicInfo, err error)
 	funcGetOrigin    string
 	inspectFuncGet   func(ctx context.Context, id int64)
 	afterGetCounter  uint64
 	beforeGetCounter uint64
 	GetMock          mAuthRepoMockGet
+
+	funcUpdate          func(ctx context.Context, id int64, info *model.User) (err error)
+	funcUpdateOrigin    string
+	inspectFuncUpdate   func(ctx context.Context, id int64, info *model.User)
+	afterUpdateCounter  uint64
+	beforeUpdateCounter uint64
+	UpdateMock          mAuthRepoMockUpdate
 }
 
 // NewAuthRepoMock returns a mock for mm_repo.AuthRepo
@@ -46,8 +60,14 @@ func NewAuthRepoMock(t minimock.Tester) *AuthRepoMock {
 	m.CreateMock = mAuthRepoMockCreate{mock: m}
 	m.CreateMock.callArgs = []*AuthRepoMockCreateParams{}
 
+	m.DeleteMock = mAuthRepoMockDelete{mock: m}
+	m.DeleteMock.callArgs = []*AuthRepoMockDeleteParams{}
+
 	m.GetMock = mAuthRepoMockGet{mock: m}
 	m.GetMock.callArgs = []*AuthRepoMockGetParams{}
+
+	m.UpdateMock = mAuthRepoMockUpdate{mock: m}
+	m.UpdateMock.callArgs = []*AuthRepoMockUpdateParams{}
 
 	t.Cleanup(m.MinimockFinish)
 
@@ -397,6 +417,348 @@ func (m *AuthRepoMock) MinimockCreateInspect() {
 	}
 }
 
+type mAuthRepoMockDelete struct {
+	optional           bool
+	mock               *AuthRepoMock
+	defaultExpectation *AuthRepoMockDeleteExpectation
+	expectations       []*AuthRepoMockDeleteExpectation
+
+	callArgs []*AuthRepoMockDeleteParams
+	mutex    sync.RWMutex
+
+	expectedInvocations       uint64
+	expectedInvocationsOrigin string
+}
+
+// AuthRepoMockDeleteExpectation specifies expectation struct of the AuthRepo.Delete
+type AuthRepoMockDeleteExpectation struct {
+	mock               *AuthRepoMock
+	params             *AuthRepoMockDeleteParams
+	paramPtrs          *AuthRepoMockDeleteParamPtrs
+	expectationOrigins AuthRepoMockDeleteExpectationOrigins
+	results            *AuthRepoMockDeleteResults
+	returnOrigin       string
+	Counter            uint64
+}
+
+// AuthRepoMockDeleteParams contains parameters of the AuthRepo.Delete
+type AuthRepoMockDeleteParams struct {
+	ctx context.Context
+	id  int64
+}
+
+// AuthRepoMockDeleteParamPtrs contains pointers to parameters of the AuthRepo.Delete
+type AuthRepoMockDeleteParamPtrs struct {
+	ctx *context.Context
+	id  *int64
+}
+
+// AuthRepoMockDeleteResults contains results of the AuthRepo.Delete
+type AuthRepoMockDeleteResults struct {
+	err error
+}
+
+// AuthRepoMockDeleteOrigins contains origins of expectations of the AuthRepo.Delete
+type AuthRepoMockDeleteExpectationOrigins struct {
+	origin    string
+	originCtx string
+	originId  string
+}
+
+// Marks this method to be optional. The default behavior of any method with Return() is '1 or more', meaning
+// the test will fail minimock's automatic final call check if the mocked method was not called at least once.
+// Optional() makes method check to work in '0 or more' mode.
+// It is NOT RECOMMENDED to use this option unless you really need it, as default behaviour helps to
+// catch the problems when the expected method call is totally skipped during test run.
+func (mmDelete *mAuthRepoMockDelete) Optional() *mAuthRepoMockDelete {
+	mmDelete.optional = true
+	return mmDelete
+}
+
+// Expect sets up expected params for AuthRepo.Delete
+func (mmDelete *mAuthRepoMockDelete) Expect(ctx context.Context, id int64) *mAuthRepoMockDelete {
+	if mmDelete.mock.funcDelete != nil {
+		mmDelete.mock.t.Fatalf("AuthRepoMock.Delete mock is already set by Set")
+	}
+
+	if mmDelete.defaultExpectation == nil {
+		mmDelete.defaultExpectation = &AuthRepoMockDeleteExpectation{}
+	}
+
+	if mmDelete.defaultExpectation.paramPtrs != nil {
+		mmDelete.mock.t.Fatalf("AuthRepoMock.Delete mock is already set by ExpectParams functions")
+	}
+
+	mmDelete.defaultExpectation.params = &AuthRepoMockDeleteParams{ctx, id}
+	mmDelete.defaultExpectation.expectationOrigins.origin = minimock.CallerInfo(1)
+	for _, e := range mmDelete.expectations {
+		if minimock.Equal(e.params, mmDelete.defaultExpectation.params) {
+			mmDelete.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmDelete.defaultExpectation.params)
+		}
+	}
+
+	return mmDelete
+}
+
+// ExpectCtxParam1 sets up expected param ctx for AuthRepo.Delete
+func (mmDelete *mAuthRepoMockDelete) ExpectCtxParam1(ctx context.Context) *mAuthRepoMockDelete {
+	if mmDelete.mock.funcDelete != nil {
+		mmDelete.mock.t.Fatalf("AuthRepoMock.Delete mock is already set by Set")
+	}
+
+	if mmDelete.defaultExpectation == nil {
+		mmDelete.defaultExpectation = &AuthRepoMockDeleteExpectation{}
+	}
+
+	if mmDelete.defaultExpectation.params != nil {
+		mmDelete.mock.t.Fatalf("AuthRepoMock.Delete mock is already set by Expect")
+	}
+
+	if mmDelete.defaultExpectation.paramPtrs == nil {
+		mmDelete.defaultExpectation.paramPtrs = &AuthRepoMockDeleteParamPtrs{}
+	}
+	mmDelete.defaultExpectation.paramPtrs.ctx = &ctx
+	mmDelete.defaultExpectation.expectationOrigins.originCtx = minimock.CallerInfo(1)
+
+	return mmDelete
+}
+
+// ExpectIdParam2 sets up expected param id for AuthRepo.Delete
+func (mmDelete *mAuthRepoMockDelete) ExpectIdParam2(id int64) *mAuthRepoMockDelete {
+	if mmDelete.mock.funcDelete != nil {
+		mmDelete.mock.t.Fatalf("AuthRepoMock.Delete mock is already set by Set")
+	}
+
+	if mmDelete.defaultExpectation == nil {
+		mmDelete.defaultExpectation = &AuthRepoMockDeleteExpectation{}
+	}
+
+	if mmDelete.defaultExpectation.params != nil {
+		mmDelete.mock.t.Fatalf("AuthRepoMock.Delete mock is already set by Expect")
+	}
+
+	if mmDelete.defaultExpectation.paramPtrs == nil {
+		mmDelete.defaultExpectation.paramPtrs = &AuthRepoMockDeleteParamPtrs{}
+	}
+	mmDelete.defaultExpectation.paramPtrs.id = &id
+	mmDelete.defaultExpectation.expectationOrigins.originId = minimock.CallerInfo(1)
+
+	return mmDelete
+}
+
+// Inspect accepts an inspector function that has same arguments as the AuthRepo.Delete
+func (mmDelete *mAuthRepoMockDelete) Inspect(f func(ctx context.Context, id int64)) *mAuthRepoMockDelete {
+	if mmDelete.mock.inspectFuncDelete != nil {
+		mmDelete.mock.t.Fatalf("Inspect function is already set for AuthRepoMock.Delete")
+	}
+
+	mmDelete.mock.inspectFuncDelete = f
+
+	return mmDelete
+}
+
+// Return sets up results that will be returned by AuthRepo.Delete
+func (mmDelete *mAuthRepoMockDelete) Return(err error) *AuthRepoMock {
+	if mmDelete.mock.funcDelete != nil {
+		mmDelete.mock.t.Fatalf("AuthRepoMock.Delete mock is already set by Set")
+	}
+
+	if mmDelete.defaultExpectation == nil {
+		mmDelete.defaultExpectation = &AuthRepoMockDeleteExpectation{mock: mmDelete.mock}
+	}
+	mmDelete.defaultExpectation.results = &AuthRepoMockDeleteResults{err}
+	mmDelete.defaultExpectation.returnOrigin = minimock.CallerInfo(1)
+	return mmDelete.mock
+}
+
+// Set uses given function f to mock the AuthRepo.Delete method
+func (mmDelete *mAuthRepoMockDelete) Set(f func(ctx context.Context, id int64) (err error)) *AuthRepoMock {
+	if mmDelete.defaultExpectation != nil {
+		mmDelete.mock.t.Fatalf("Default expectation is already set for the AuthRepo.Delete method")
+	}
+
+	if len(mmDelete.expectations) > 0 {
+		mmDelete.mock.t.Fatalf("Some expectations are already set for the AuthRepo.Delete method")
+	}
+
+	mmDelete.mock.funcDelete = f
+	mmDelete.mock.funcDeleteOrigin = minimock.CallerInfo(1)
+	return mmDelete.mock
+}
+
+// When sets expectation for the AuthRepo.Delete which will trigger the result defined by the following
+// Then helper
+func (mmDelete *mAuthRepoMockDelete) When(ctx context.Context, id int64) *AuthRepoMockDeleteExpectation {
+	if mmDelete.mock.funcDelete != nil {
+		mmDelete.mock.t.Fatalf("AuthRepoMock.Delete mock is already set by Set")
+	}
+
+	expectation := &AuthRepoMockDeleteExpectation{
+		mock:               mmDelete.mock,
+		params:             &AuthRepoMockDeleteParams{ctx, id},
+		expectationOrigins: AuthRepoMockDeleteExpectationOrigins{origin: minimock.CallerInfo(1)},
+	}
+	mmDelete.expectations = append(mmDelete.expectations, expectation)
+	return expectation
+}
+
+// Then sets up AuthRepo.Delete return parameters for the expectation previously defined by the When method
+func (e *AuthRepoMockDeleteExpectation) Then(err error) *AuthRepoMock {
+	e.results = &AuthRepoMockDeleteResults{err}
+	return e.mock
+}
+
+// Times sets number of times AuthRepo.Delete should be invoked
+func (mmDelete *mAuthRepoMockDelete) Times(n uint64) *mAuthRepoMockDelete {
+	if n == 0 {
+		mmDelete.mock.t.Fatalf("Times of AuthRepoMock.Delete mock can not be zero")
+	}
+	mm_atomic.StoreUint64(&mmDelete.expectedInvocations, n)
+	mmDelete.expectedInvocationsOrigin = minimock.CallerInfo(1)
+	return mmDelete
+}
+
+func (mmDelete *mAuthRepoMockDelete) invocationsDone() bool {
+	if len(mmDelete.expectations) == 0 && mmDelete.defaultExpectation == nil && mmDelete.mock.funcDelete == nil {
+		return true
+	}
+
+	totalInvocations := mm_atomic.LoadUint64(&mmDelete.mock.afterDeleteCounter)
+	expectedInvocations := mm_atomic.LoadUint64(&mmDelete.expectedInvocations)
+
+	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
+}
+
+// Delete implements mm_repo.AuthRepo
+func (mmDelete *AuthRepoMock) Delete(ctx context.Context, id int64) (err error) {
+	mm_atomic.AddUint64(&mmDelete.beforeDeleteCounter, 1)
+	defer mm_atomic.AddUint64(&mmDelete.afterDeleteCounter, 1)
+
+	mmDelete.t.Helper()
+
+	if mmDelete.inspectFuncDelete != nil {
+		mmDelete.inspectFuncDelete(ctx, id)
+	}
+
+	mm_params := AuthRepoMockDeleteParams{ctx, id}
+
+	// Record call args
+	mmDelete.DeleteMock.mutex.Lock()
+	mmDelete.DeleteMock.callArgs = append(mmDelete.DeleteMock.callArgs, &mm_params)
+	mmDelete.DeleteMock.mutex.Unlock()
+
+	for _, e := range mmDelete.DeleteMock.expectations {
+		if minimock.Equal(*e.params, mm_params) {
+			mm_atomic.AddUint64(&e.Counter, 1)
+			return e.results.err
+		}
+	}
+
+	if mmDelete.DeleteMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmDelete.DeleteMock.defaultExpectation.Counter, 1)
+		mm_want := mmDelete.DeleteMock.defaultExpectation.params
+		mm_want_ptrs := mmDelete.DeleteMock.defaultExpectation.paramPtrs
+
+		mm_got := AuthRepoMockDeleteParams{ctx, id}
+
+		if mm_want_ptrs != nil {
+
+			if mm_want_ptrs.ctx != nil && !minimock.Equal(*mm_want_ptrs.ctx, mm_got.ctx) {
+				mmDelete.t.Errorf("AuthRepoMock.Delete got unexpected parameter ctx, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmDelete.DeleteMock.defaultExpectation.expectationOrigins.originCtx, *mm_want_ptrs.ctx, mm_got.ctx, minimock.Diff(*mm_want_ptrs.ctx, mm_got.ctx))
+			}
+
+			if mm_want_ptrs.id != nil && !minimock.Equal(*mm_want_ptrs.id, mm_got.id) {
+				mmDelete.t.Errorf("AuthRepoMock.Delete got unexpected parameter id, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmDelete.DeleteMock.defaultExpectation.expectationOrigins.originId, *mm_want_ptrs.id, mm_got.id, minimock.Diff(*mm_want_ptrs.id, mm_got.id))
+			}
+
+		} else if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
+			mmDelete.t.Errorf("AuthRepoMock.Delete got unexpected parameters, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+				mmDelete.DeleteMock.defaultExpectation.expectationOrigins.origin, *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+		}
+
+		mm_results := mmDelete.DeleteMock.defaultExpectation.results
+		if mm_results == nil {
+			mmDelete.t.Fatal("No results are set for the AuthRepoMock.Delete")
+		}
+		return (*mm_results).err
+	}
+	if mmDelete.funcDelete != nil {
+		return mmDelete.funcDelete(ctx, id)
+	}
+	mmDelete.t.Fatalf("Unexpected call to AuthRepoMock.Delete. %v %v", ctx, id)
+	return
+}
+
+// DeleteAfterCounter returns a count of finished AuthRepoMock.Delete invocations
+func (mmDelete *AuthRepoMock) DeleteAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmDelete.afterDeleteCounter)
+}
+
+// DeleteBeforeCounter returns a count of AuthRepoMock.Delete invocations
+func (mmDelete *AuthRepoMock) DeleteBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmDelete.beforeDeleteCounter)
+}
+
+// Calls returns a list of arguments used in each call to AuthRepoMock.Delete.
+// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
+func (mmDelete *mAuthRepoMockDelete) Calls() []*AuthRepoMockDeleteParams {
+	mmDelete.mutex.RLock()
+
+	argCopy := make([]*AuthRepoMockDeleteParams, len(mmDelete.callArgs))
+	copy(argCopy, mmDelete.callArgs)
+
+	mmDelete.mutex.RUnlock()
+
+	return argCopy
+}
+
+// MinimockDeleteDone returns true if the count of the Delete invocations corresponds
+// the number of defined expectations
+func (m *AuthRepoMock) MinimockDeleteDone() bool {
+	if m.DeleteMock.optional {
+		// Optional methods provide '0 or more' call count restriction.
+		return true
+	}
+
+	for _, e := range m.DeleteMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	return m.DeleteMock.invocationsDone()
+}
+
+// MinimockDeleteInspect logs each unmet expectation
+func (m *AuthRepoMock) MinimockDeleteInspect() {
+	for _, e := range m.DeleteMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Errorf("Expected call to AuthRepoMock.Delete at\n%s with params: %#v", e.expectationOrigins.origin, *e.params)
+		}
+	}
+
+	afterDeleteCounter := mm_atomic.LoadUint64(&m.afterDeleteCounter)
+	// if default expectation was set then invocations count should be greater than zero
+	if m.DeleteMock.defaultExpectation != nil && afterDeleteCounter < 1 {
+		if m.DeleteMock.defaultExpectation.params == nil {
+			m.t.Errorf("Expected call to AuthRepoMock.Delete at\n%s", m.DeleteMock.defaultExpectation.returnOrigin)
+		} else {
+			m.t.Errorf("Expected call to AuthRepoMock.Delete at\n%s with params: %#v", m.DeleteMock.defaultExpectation.expectationOrigins.origin, *m.DeleteMock.defaultExpectation.params)
+		}
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcDelete != nil && afterDeleteCounter < 1 {
+		m.t.Errorf("Expected call to AuthRepoMock.Delete at\n%s", m.funcDeleteOrigin)
+	}
+
+	if !m.DeleteMock.invocationsDone() && afterDeleteCounter > 0 {
+		m.t.Errorf("Expected %d calls to AuthRepoMock.Delete at\n%s but found %d calls",
+			mm_atomic.LoadUint64(&m.DeleteMock.expectedInvocations), m.DeleteMock.expectedInvocationsOrigin, afterDeleteCounter)
+	}
+}
+
 type mAuthRepoMockGet struct {
 	optional           bool
 	mock               *AuthRepoMock
@@ -740,13 +1102,390 @@ func (m *AuthRepoMock) MinimockGetInspect() {
 	}
 }
 
+type mAuthRepoMockUpdate struct {
+	optional           bool
+	mock               *AuthRepoMock
+	defaultExpectation *AuthRepoMockUpdateExpectation
+	expectations       []*AuthRepoMockUpdateExpectation
+
+	callArgs []*AuthRepoMockUpdateParams
+	mutex    sync.RWMutex
+
+	expectedInvocations       uint64
+	expectedInvocationsOrigin string
+}
+
+// AuthRepoMockUpdateExpectation specifies expectation struct of the AuthRepo.Update
+type AuthRepoMockUpdateExpectation struct {
+	mock               *AuthRepoMock
+	params             *AuthRepoMockUpdateParams
+	paramPtrs          *AuthRepoMockUpdateParamPtrs
+	expectationOrigins AuthRepoMockUpdateExpectationOrigins
+	results            *AuthRepoMockUpdateResults
+	returnOrigin       string
+	Counter            uint64
+}
+
+// AuthRepoMockUpdateParams contains parameters of the AuthRepo.Update
+type AuthRepoMockUpdateParams struct {
+	ctx  context.Context
+	id   int64
+	info *model.User
+}
+
+// AuthRepoMockUpdateParamPtrs contains pointers to parameters of the AuthRepo.Update
+type AuthRepoMockUpdateParamPtrs struct {
+	ctx  *context.Context
+	id   *int64
+	info **model.User
+}
+
+// AuthRepoMockUpdateResults contains results of the AuthRepo.Update
+type AuthRepoMockUpdateResults struct {
+	err error
+}
+
+// AuthRepoMockUpdateOrigins contains origins of expectations of the AuthRepo.Update
+type AuthRepoMockUpdateExpectationOrigins struct {
+	origin     string
+	originCtx  string
+	originId   string
+	originInfo string
+}
+
+// Marks this method to be optional. The default behavior of any method with Return() is '1 or more', meaning
+// the test will fail minimock's automatic final call check if the mocked method was not called at least once.
+// Optional() makes method check to work in '0 or more' mode.
+// It is NOT RECOMMENDED to use this option unless you really need it, as default behaviour helps to
+// catch the problems when the expected method call is totally skipped during test run.
+func (mmUpdate *mAuthRepoMockUpdate) Optional() *mAuthRepoMockUpdate {
+	mmUpdate.optional = true
+	return mmUpdate
+}
+
+// Expect sets up expected params for AuthRepo.Update
+func (mmUpdate *mAuthRepoMockUpdate) Expect(ctx context.Context, id int64, info *model.User) *mAuthRepoMockUpdate {
+	if mmUpdate.mock.funcUpdate != nil {
+		mmUpdate.mock.t.Fatalf("AuthRepoMock.Update mock is already set by Set")
+	}
+
+	if mmUpdate.defaultExpectation == nil {
+		mmUpdate.defaultExpectation = &AuthRepoMockUpdateExpectation{}
+	}
+
+	if mmUpdate.defaultExpectation.paramPtrs != nil {
+		mmUpdate.mock.t.Fatalf("AuthRepoMock.Update mock is already set by ExpectParams functions")
+	}
+
+	mmUpdate.defaultExpectation.params = &AuthRepoMockUpdateParams{ctx, id, info}
+	mmUpdate.defaultExpectation.expectationOrigins.origin = minimock.CallerInfo(1)
+	for _, e := range mmUpdate.expectations {
+		if minimock.Equal(e.params, mmUpdate.defaultExpectation.params) {
+			mmUpdate.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmUpdate.defaultExpectation.params)
+		}
+	}
+
+	return mmUpdate
+}
+
+// ExpectCtxParam1 sets up expected param ctx for AuthRepo.Update
+func (mmUpdate *mAuthRepoMockUpdate) ExpectCtxParam1(ctx context.Context) *mAuthRepoMockUpdate {
+	if mmUpdate.mock.funcUpdate != nil {
+		mmUpdate.mock.t.Fatalf("AuthRepoMock.Update mock is already set by Set")
+	}
+
+	if mmUpdate.defaultExpectation == nil {
+		mmUpdate.defaultExpectation = &AuthRepoMockUpdateExpectation{}
+	}
+
+	if mmUpdate.defaultExpectation.params != nil {
+		mmUpdate.mock.t.Fatalf("AuthRepoMock.Update mock is already set by Expect")
+	}
+
+	if mmUpdate.defaultExpectation.paramPtrs == nil {
+		mmUpdate.defaultExpectation.paramPtrs = &AuthRepoMockUpdateParamPtrs{}
+	}
+	mmUpdate.defaultExpectation.paramPtrs.ctx = &ctx
+	mmUpdate.defaultExpectation.expectationOrigins.originCtx = minimock.CallerInfo(1)
+
+	return mmUpdate
+}
+
+// ExpectIdParam2 sets up expected param id for AuthRepo.Update
+func (mmUpdate *mAuthRepoMockUpdate) ExpectIdParam2(id int64) *mAuthRepoMockUpdate {
+	if mmUpdate.mock.funcUpdate != nil {
+		mmUpdate.mock.t.Fatalf("AuthRepoMock.Update mock is already set by Set")
+	}
+
+	if mmUpdate.defaultExpectation == nil {
+		mmUpdate.defaultExpectation = &AuthRepoMockUpdateExpectation{}
+	}
+
+	if mmUpdate.defaultExpectation.params != nil {
+		mmUpdate.mock.t.Fatalf("AuthRepoMock.Update mock is already set by Expect")
+	}
+
+	if mmUpdate.defaultExpectation.paramPtrs == nil {
+		mmUpdate.defaultExpectation.paramPtrs = &AuthRepoMockUpdateParamPtrs{}
+	}
+	mmUpdate.defaultExpectation.paramPtrs.id = &id
+	mmUpdate.defaultExpectation.expectationOrigins.originId = minimock.CallerInfo(1)
+
+	return mmUpdate
+}
+
+// ExpectInfoParam3 sets up expected param info for AuthRepo.Update
+func (mmUpdate *mAuthRepoMockUpdate) ExpectInfoParam3(info *model.User) *mAuthRepoMockUpdate {
+	if mmUpdate.mock.funcUpdate != nil {
+		mmUpdate.mock.t.Fatalf("AuthRepoMock.Update mock is already set by Set")
+	}
+
+	if mmUpdate.defaultExpectation == nil {
+		mmUpdate.defaultExpectation = &AuthRepoMockUpdateExpectation{}
+	}
+
+	if mmUpdate.defaultExpectation.params != nil {
+		mmUpdate.mock.t.Fatalf("AuthRepoMock.Update mock is already set by Expect")
+	}
+
+	if mmUpdate.defaultExpectation.paramPtrs == nil {
+		mmUpdate.defaultExpectation.paramPtrs = &AuthRepoMockUpdateParamPtrs{}
+	}
+	mmUpdate.defaultExpectation.paramPtrs.info = &info
+	mmUpdate.defaultExpectation.expectationOrigins.originInfo = minimock.CallerInfo(1)
+
+	return mmUpdate
+}
+
+// Inspect accepts an inspector function that has same arguments as the AuthRepo.Update
+func (mmUpdate *mAuthRepoMockUpdate) Inspect(f func(ctx context.Context, id int64, info *model.User)) *mAuthRepoMockUpdate {
+	if mmUpdate.mock.inspectFuncUpdate != nil {
+		mmUpdate.mock.t.Fatalf("Inspect function is already set for AuthRepoMock.Update")
+	}
+
+	mmUpdate.mock.inspectFuncUpdate = f
+
+	return mmUpdate
+}
+
+// Return sets up results that will be returned by AuthRepo.Update
+func (mmUpdate *mAuthRepoMockUpdate) Return(err error) *AuthRepoMock {
+	if mmUpdate.mock.funcUpdate != nil {
+		mmUpdate.mock.t.Fatalf("AuthRepoMock.Update mock is already set by Set")
+	}
+
+	if mmUpdate.defaultExpectation == nil {
+		mmUpdate.defaultExpectation = &AuthRepoMockUpdateExpectation{mock: mmUpdate.mock}
+	}
+	mmUpdate.defaultExpectation.results = &AuthRepoMockUpdateResults{err}
+	mmUpdate.defaultExpectation.returnOrigin = minimock.CallerInfo(1)
+	return mmUpdate.mock
+}
+
+// Set uses given function f to mock the AuthRepo.Update method
+func (mmUpdate *mAuthRepoMockUpdate) Set(f func(ctx context.Context, id int64, info *model.User) (err error)) *AuthRepoMock {
+	if mmUpdate.defaultExpectation != nil {
+		mmUpdate.mock.t.Fatalf("Default expectation is already set for the AuthRepo.Update method")
+	}
+
+	if len(mmUpdate.expectations) > 0 {
+		mmUpdate.mock.t.Fatalf("Some expectations are already set for the AuthRepo.Update method")
+	}
+
+	mmUpdate.mock.funcUpdate = f
+	mmUpdate.mock.funcUpdateOrigin = minimock.CallerInfo(1)
+	return mmUpdate.mock
+}
+
+// When sets expectation for the AuthRepo.Update which will trigger the result defined by the following
+// Then helper
+func (mmUpdate *mAuthRepoMockUpdate) When(ctx context.Context, id int64, info *model.User) *AuthRepoMockUpdateExpectation {
+	if mmUpdate.mock.funcUpdate != nil {
+		mmUpdate.mock.t.Fatalf("AuthRepoMock.Update mock is already set by Set")
+	}
+
+	expectation := &AuthRepoMockUpdateExpectation{
+		mock:               mmUpdate.mock,
+		params:             &AuthRepoMockUpdateParams{ctx, id, info},
+		expectationOrigins: AuthRepoMockUpdateExpectationOrigins{origin: minimock.CallerInfo(1)},
+	}
+	mmUpdate.expectations = append(mmUpdate.expectations, expectation)
+	return expectation
+}
+
+// Then sets up AuthRepo.Update return parameters for the expectation previously defined by the When method
+func (e *AuthRepoMockUpdateExpectation) Then(err error) *AuthRepoMock {
+	e.results = &AuthRepoMockUpdateResults{err}
+	return e.mock
+}
+
+// Times sets number of times AuthRepo.Update should be invoked
+func (mmUpdate *mAuthRepoMockUpdate) Times(n uint64) *mAuthRepoMockUpdate {
+	if n == 0 {
+		mmUpdate.mock.t.Fatalf("Times of AuthRepoMock.Update mock can not be zero")
+	}
+	mm_atomic.StoreUint64(&mmUpdate.expectedInvocations, n)
+	mmUpdate.expectedInvocationsOrigin = minimock.CallerInfo(1)
+	return mmUpdate
+}
+
+func (mmUpdate *mAuthRepoMockUpdate) invocationsDone() bool {
+	if len(mmUpdate.expectations) == 0 && mmUpdate.defaultExpectation == nil && mmUpdate.mock.funcUpdate == nil {
+		return true
+	}
+
+	totalInvocations := mm_atomic.LoadUint64(&mmUpdate.mock.afterUpdateCounter)
+	expectedInvocations := mm_atomic.LoadUint64(&mmUpdate.expectedInvocations)
+
+	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
+}
+
+// Update implements mm_repo.AuthRepo
+func (mmUpdate *AuthRepoMock) Update(ctx context.Context, id int64, info *model.User) (err error) {
+	mm_atomic.AddUint64(&mmUpdate.beforeUpdateCounter, 1)
+	defer mm_atomic.AddUint64(&mmUpdate.afterUpdateCounter, 1)
+
+	mmUpdate.t.Helper()
+
+	if mmUpdate.inspectFuncUpdate != nil {
+		mmUpdate.inspectFuncUpdate(ctx, id, info)
+	}
+
+	mm_params := AuthRepoMockUpdateParams{ctx, id, info}
+
+	// Record call args
+	mmUpdate.UpdateMock.mutex.Lock()
+	mmUpdate.UpdateMock.callArgs = append(mmUpdate.UpdateMock.callArgs, &mm_params)
+	mmUpdate.UpdateMock.mutex.Unlock()
+
+	for _, e := range mmUpdate.UpdateMock.expectations {
+		if minimock.Equal(*e.params, mm_params) {
+			mm_atomic.AddUint64(&e.Counter, 1)
+			return e.results.err
+		}
+	}
+
+	if mmUpdate.UpdateMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmUpdate.UpdateMock.defaultExpectation.Counter, 1)
+		mm_want := mmUpdate.UpdateMock.defaultExpectation.params
+		mm_want_ptrs := mmUpdate.UpdateMock.defaultExpectation.paramPtrs
+
+		mm_got := AuthRepoMockUpdateParams{ctx, id, info}
+
+		if mm_want_ptrs != nil {
+
+			if mm_want_ptrs.ctx != nil && !minimock.Equal(*mm_want_ptrs.ctx, mm_got.ctx) {
+				mmUpdate.t.Errorf("AuthRepoMock.Update got unexpected parameter ctx, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmUpdate.UpdateMock.defaultExpectation.expectationOrigins.originCtx, *mm_want_ptrs.ctx, mm_got.ctx, minimock.Diff(*mm_want_ptrs.ctx, mm_got.ctx))
+			}
+
+			if mm_want_ptrs.id != nil && !minimock.Equal(*mm_want_ptrs.id, mm_got.id) {
+				mmUpdate.t.Errorf("AuthRepoMock.Update got unexpected parameter id, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmUpdate.UpdateMock.defaultExpectation.expectationOrigins.originId, *mm_want_ptrs.id, mm_got.id, minimock.Diff(*mm_want_ptrs.id, mm_got.id))
+			}
+
+			if mm_want_ptrs.info != nil && !minimock.Equal(*mm_want_ptrs.info, mm_got.info) {
+				mmUpdate.t.Errorf("AuthRepoMock.Update got unexpected parameter info, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmUpdate.UpdateMock.defaultExpectation.expectationOrigins.originInfo, *mm_want_ptrs.info, mm_got.info, minimock.Diff(*mm_want_ptrs.info, mm_got.info))
+			}
+
+		} else if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
+			mmUpdate.t.Errorf("AuthRepoMock.Update got unexpected parameters, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+				mmUpdate.UpdateMock.defaultExpectation.expectationOrigins.origin, *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+		}
+
+		mm_results := mmUpdate.UpdateMock.defaultExpectation.results
+		if mm_results == nil {
+			mmUpdate.t.Fatal("No results are set for the AuthRepoMock.Update")
+		}
+		return (*mm_results).err
+	}
+	if mmUpdate.funcUpdate != nil {
+		return mmUpdate.funcUpdate(ctx, id, info)
+	}
+	mmUpdate.t.Fatalf("Unexpected call to AuthRepoMock.Update. %v %v %v", ctx, id, info)
+	return
+}
+
+// UpdateAfterCounter returns a count of finished AuthRepoMock.Update invocations
+func (mmUpdate *AuthRepoMock) UpdateAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmUpdate.afterUpdateCounter)
+}
+
+// UpdateBeforeCounter returns a count of AuthRepoMock.Update invocations
+func (mmUpdate *AuthRepoMock) UpdateBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmUpdate.beforeUpdateCounter)
+}
+
+// Calls returns a list of arguments used in each call to AuthRepoMock.Update.
+// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
+func (mmUpdate *mAuthRepoMockUpdate) Calls() []*AuthRepoMockUpdateParams {
+	mmUpdate.mutex.RLock()
+
+	argCopy := make([]*AuthRepoMockUpdateParams, len(mmUpdate.callArgs))
+	copy(argCopy, mmUpdate.callArgs)
+
+	mmUpdate.mutex.RUnlock()
+
+	return argCopy
+}
+
+// MinimockUpdateDone returns true if the count of the Update invocations corresponds
+// the number of defined expectations
+func (m *AuthRepoMock) MinimockUpdateDone() bool {
+	if m.UpdateMock.optional {
+		// Optional methods provide '0 or more' call count restriction.
+		return true
+	}
+
+	for _, e := range m.UpdateMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	return m.UpdateMock.invocationsDone()
+}
+
+// MinimockUpdateInspect logs each unmet expectation
+func (m *AuthRepoMock) MinimockUpdateInspect() {
+	for _, e := range m.UpdateMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Errorf("Expected call to AuthRepoMock.Update at\n%s with params: %#v", e.expectationOrigins.origin, *e.params)
+		}
+	}
+
+	afterUpdateCounter := mm_atomic.LoadUint64(&m.afterUpdateCounter)
+	// if default expectation was set then invocations count should be greater than zero
+	if m.UpdateMock.defaultExpectation != nil && afterUpdateCounter < 1 {
+		if m.UpdateMock.defaultExpectation.params == nil {
+			m.t.Errorf("Expected call to AuthRepoMock.Update at\n%s", m.UpdateMock.defaultExpectation.returnOrigin)
+		} else {
+			m.t.Errorf("Expected call to AuthRepoMock.Update at\n%s with params: %#v", m.UpdateMock.defaultExpectation.expectationOrigins.origin, *m.UpdateMock.defaultExpectation.params)
+		}
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcUpdate != nil && afterUpdateCounter < 1 {
+		m.t.Errorf("Expected call to AuthRepoMock.Update at\n%s", m.funcUpdateOrigin)
+	}
+
+	if !m.UpdateMock.invocationsDone() && afterUpdateCounter > 0 {
+		m.t.Errorf("Expected %d calls to AuthRepoMock.Update at\n%s but found %d calls",
+			mm_atomic.LoadUint64(&m.UpdateMock.expectedInvocations), m.UpdateMock.expectedInvocationsOrigin, afterUpdateCounter)
+	}
+}
+
 // MinimockFinish checks that all mocked methods have been called the expected number of times
 func (m *AuthRepoMock) MinimockFinish() {
 	m.finishOnce.Do(func() {
 		if !m.minimockDone() {
 			m.MinimockCreateInspect()
 
+			m.MinimockDeleteInspect()
+
 			m.MinimockGetInspect()
+
+			m.MinimockUpdateInspect()
 		}
 	})
 }
@@ -771,5 +1510,7 @@ func (m *AuthRepoMock) minimockDone() bool {
 	done := true
 	return done &&
 		m.MinimockCreateDone() &&
-		m.MinimockGetDone()
+		m.MinimockDeleteDone() &&
+		m.MinimockGetDone() &&
+		m.MinimockUpdateDone()
 }

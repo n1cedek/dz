@@ -34,3 +34,11 @@ func ToGetResponse(info *model.PublicInfo) *desc.GetResponse {
 		Email: info.Email,
 	}
 }
+
+func ToInfoFromUpdate(info *desc.UpdateRequest) *model.User {
+	return &model.User{
+		ID:    info.Id,
+		Name:  info.Name.GetValue(),
+		Email: info.Email.GetValue(),
+	}
+}
