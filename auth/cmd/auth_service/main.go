@@ -7,10 +7,6 @@ import (
 	"log"
 )
 
-const (
-	idCreate = 1
-)
-
 //	func (s *UServer) Update(ctx context.Context, req *desc.UpdateRequest) (*emptypb.Empty, error) {
 //		log.Printf("Update user: %+v\n", req)
 //		return &emptypb.Empty{}, nil

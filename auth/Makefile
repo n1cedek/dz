@@ -5,7 +5,7 @@ LOCAL_BIN:=$(CURDIR)/bin
 PROTO_DIR := api/auth_api
 PROTO_FILE := $(PROTO_DIR)/auth.proto
 OUT_DIR := pkg/w1
-
+COVERAGE_DIR := coverage
 LOCAL_MIGRATION_DIR=$(MIGRATION_DIR)
 LOCAL_MIGRATION_DSN="host=localhost port=$(PG_PORT) dbname=$(PG_DATABASE_NAME) user=$(PG_USER) password=$(PG_PASSWORD) sslmode=disable"
 
@@ -77,27 +77,29 @@ local-migration-down:
 
 test:
 	go clean -testcache
+	mkdir -p $(COVERAGE_DIR)
 	go test \
       ./internal/api/tests \
-      ./service/auth/tests \
+      ./internal/service/auth/tests \
       -covermode=count \
       -coverpkg=./internal/api/auth,./service/auth \
-      -coverprofile=cover.out \
+      -coverprofile=$(COVERAGE_DIR)/cover.out \
       -v
 test-coverage:
 	go clean -testcache
+	mkdir -p $(COVERAGE_DIR)
 	go test \
 		./internal/api/tests \
-		./service/auth/tests \
+		./internal/service/auth/tests \
 		-covermode=count \
 		-coverpkg=./internal/api/auth,./service/auth \
-		-coverprofile=coverage.tmp.out \
+		-coverprofile=$(COVERAGE_DIR)/coverage.tmp.out \
 		-count=5 \
 		-v
-	grep -v 'mocks\|config' coverage.tmp.out  > coverage.out
-	go tool cover -html=coverage.out;
-	go tool cover -func=./coverage.out | grep "total";
-	grep -sqFx "/coverage.out" .gitignore || echo "/coverage.out" >> .gitignore
+	grep -v 'mocks\|config' $(COVERAGE_DIR)/coverage.tmp.out  > $(COVERAGE_DIR)/coverage.out
+	go tool cover -html=$(COVERAGE_DIR)/coverage.out;
+	go tool cover -func=$(COVERAGE_DIR)/coverage.out | grep "total"
+	grep -sqFx "$(COVERAGE_DIR)/coverage.out" .gitignore || echo "$(COVERAGE_DIR)/coverage.out" >> .gitignore
 
 vendor-proto:
 		@if [ ! -d vendor.protogen/validate ]; then \
@@ -122,11 +124,11 @@ gen-cert:
 	# Генерация закрытого ключа для gRPC-сервиса
 	openssl genrsa -out certificates/service.key 4096
 	# Создание запроса на сертификат (CSR) для сервиса с использованием конфигурационного файла
-	openssl req -new -key certificates/service.key -out certificates/service.csr -config certificate.conf
+	openssl req -new -key certificates/service.key -out certificates/service.csr -config certificates/certificate.conf
 	# Подписание CSR с помощью CA, чтобы выпустить действительный сертификат для сервиса
 	# Используется конфигурационный файл для указания расширений сертификата
 	openssl x509 -req -in certificates/service.csr -CA certificates/ca.cert -CAkey certificates/ca.key -CAcreateserial \
-    		-out certificates/service.pem -days 365 -sha256 -extfile certificate.conf -extensions req_ext
+    		-out certificates/service.pem -days 365 -sha256 -extfile certificates/certificate.conf -extensions req_ext
 
 grpc-load-test:
 	ghz \
